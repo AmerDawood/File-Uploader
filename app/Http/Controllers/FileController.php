@@ -15,7 +15,7 @@ class FileController extends Controller
     public function index()
     {
         $files = File::latest()->get();
-        return view('files.index', compact('files'));
+        return view('dashboard.files.index', compact('files'));
     }
 
     /**
@@ -23,7 +23,7 @@ class FileController extends Controller
      */
     public function create()
     {
-        return view('files.create');
+        return view('dashboard.files.create');
     }
 
     /**
@@ -47,6 +47,7 @@ class FileController extends Controller
             'mime_type' => $file->getClientMimeType(),
             'size' => $file->getSize(),
             'secret_key' => Str::random(22),
+            // 'slug' => Str::slug($file->getClientOriginalName()),
         ]);
 
         return redirect()->route('files.index')->with('success', 'File uploaded successfully.');
@@ -55,9 +56,11 @@ class FileController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(File $file)
+    public function show($slug)
     {
-        //
+        $file = File::find($slug);
+        return view('dashboard.files.show', compact('file'));
+
     }
 
     /**
@@ -82,5 +85,29 @@ class FileController extends Controller
     public function destroy(File $file)
     {
         //
+    }
+
+
+
+    public function downloadFile(Request $request)
+    {
+        // Validate the request data, including the secret key and file details
+
+        $secretKey = $request->input('secretKey');
+        $file = $request->input('file');
+
+        // Check if the entered secret key matches the file's secret key
+        if ($secretKey === $file['secret_key']) {
+            $filePath = 'uploads/' . $file['filename'];
+            // Get the file from the storage and return it as a download response
+            if (Storage::exists($filePath)) {
+                return response()->download(storage_path('app/' . $filePath), $file['filename'], [
+                    'Content-Type' => 'application/pdf',
+                ]);
+            }
+        }
+
+        // If the secret key is incorrect or the file does not exist, return an error response
+        return response()->json(['message' => 'Error: File not found.'], 404);
     }
 }

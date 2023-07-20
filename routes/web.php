@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,3 +18,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+Route::resource('files',FileController::class);
+
+Route::get('/admin',[DashboardController::class,'index'])->name('dashboard.index');
+Route::get('/show/{slug}',[FileController::class,'show'])->name('file.show');
+
+Route::post('/download-file', [FileController::class,'downloadFile'])->name('download.file');

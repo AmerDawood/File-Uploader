@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('mime_type');
             $table->integer('size')->unsigned();
             $table->string('secret_key')->unique();
+            // $table->string('slug')->unique();
             $table->timestamps();
         });
     }
