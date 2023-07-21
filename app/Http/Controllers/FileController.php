@@ -33,22 +33,27 @@ class FileController extends Controller
      */
     public function store(FileRequest $request)
     {
+        // Get the uploaded file from the request
         $file = $request->file('file');
+
+        // Generate a unique filename using random string and original extension
         $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
 
-        $path = Storage::disk('public')->putFileAs('uploads', $file, $filename);
+        // Store the file in the 'uploads' directory within the 'public' disk
+        $path = $file->storeAs('uploads', $filename, 'public');
 
+        // Create a new file record in the database
         $newFile = File::create([
             'filename' => $file->getClientOriginalName(),
             'path' => $path,
             'mime_type' => $file->getClientMimeType(),
             'size' => $file->getSize(),
             'secret_key' => Str::random(22),
-            // 'slug' => Str::slug($file->getClientOriginalName()),
         ]);
 
         return redirect()->route('files.index')->with('success', 'File uploaded successfully.');
     }
+
 
     /**
      * Display the specified resource.
@@ -75,27 +80,29 @@ class FileController extends Controller
      * Update the specified resource in storage.
      */
     public function update(FileRequest $request, $id)
-    {
-        $file = File::findOrFail($id);
+{
+    $file = File::findOrFail($id);
 
-        if ($request->hasFile('file')) {
-            $newFile = $request->file('file');
-            $filename = Str::random(20) . '.' . $newFile->getClientOriginalExtension();
-            $path = Storage::disk('public')->putFileAs('uploads', $newFile, $filename);
+    if ($request->hasFile('file')) {
+        $newFile = $request->file('file');
+        $filename = Str::random(20) . '.' . $newFile->getClientOriginalExtension();
+        $path = $newFile->storeAs('uploads', $filename, 'public');
 
-            // Remove the old file
-            Storage::disk('public')->delete($file->path);
+        // Remove the old file
+        Storage::disk('public')->delete($file->path);
 
-            // Update the file information
-            $file->filename = $newFile->getClientOriginalName();
-            $file->path = $path;
-            $file->mime_type = $newFile->getClientMimeType();
-            $file->size = $newFile->getSize();
-        }
-        $file->save();
-
-        return redirect()->route('files.index')->with('success', 'File updated successfully.');
+        // Update the new file data
+        $file->filename = $newFile->getClientOriginalName();
+        $file->path = $path;
+        $file->mime_type = $newFile->getClientMimeType();
+        $file->size = $newFile->getSize();
     }
+
+    $file->save();
+
+    return redirect()->route('files.index')->with('success', 'File updated successfully.');
+}
+
 
 
     /**
@@ -119,7 +126,6 @@ class FileController extends Controller
 
     public function downloadFile(DawonloadFileRequest $request)
     {
-
         $secretKey = $request->input('secretKey');
         $fileId = $request->input('fileId');
 
@@ -131,29 +137,25 @@ class FileController extends Controller
             if (Storage::disk('public')->exists($filePath)) {
                 $originalFilename = $file->filename;
 
-                $fileContents = Storage::disk('public')->get($filePath);
+                $storageFilePath = Storage::disk('public')->path($filePath);
 
-                $fileMimeType = $file->mime_type;
+                return response()->download($storageFilePath, $originalFilename);
 
-                $allowedMimeTypes = [
-                    'application/pdf',
-                    'image/jpeg',
-                    'image/png',
-                ];
 
-                if (in_array($fileMimeType, $allowedMimeTypes)) {
-                    return response($fileContents, 200, [
-                        'Content-Type' => $fileMimeType,
-                        'Content-Disposition' => 'attachment; filename="' . $originalFilename . '"',
-                    ]);
-                }
+                // [
+                    // 'Content-Type' => $file->mime_type,
+                    // 'Content-Disposition' => 'attachment; filename="' . $originalFilename . '"',
+                // ]);
+
+
             }
         }
 
-        // redirect to show file page with  error flash message
-
+        // Redirect to show file page with an error flash message
         return redirect()->back()->with('error', 'Error: File not found or access denied.');
     }
+
+
 
 
 }
