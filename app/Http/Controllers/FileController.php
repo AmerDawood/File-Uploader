@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DawonloadFileRequest;
+use App\Http\Requests\FileRequest;
 use App\Models\File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -29,13 +31,8 @@ class FileController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(FileRequest $request)
     {
-        $request->validate([
-            'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,png,jpeg,jpg',
-            // |max:2048
-        ]);
-
         $file = $request->file('file');
         $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
 
@@ -56,9 +53,9 @@ class FileController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($slug)
+    public function show($id)
     {
-        $file = File::find($slug);
+        $file = File::find($id);
         return view('dashboard.files.show', compact('file'));
 
     }
@@ -66,48 +63,99 @@ class FileController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(File $file)
+    public function edit($id)
     {
-        //
+
+         $file = File::findOrFail($id);
+
+         return view('dashboard.files.edite',compact('file'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, File $file)
+    public function update(FileRequest $request, $id)
     {
-        //
+        $file = File::findOrFail($id);
+
+        if ($request->hasFile('file')) {
+            $newFile = $request->file('file');
+            $filename = Str::random(20) . '.' . $newFile->getClientOriginalExtension();
+            $path = Storage::disk('public')->putFileAs('uploads', $newFile, $filename);
+
+            // Remove the old file
+            Storage::disk('public')->delete($file->path);
+
+            // Update the file information
+            $file->filename = $newFile->getClientOriginalName();
+            $file->path = $path;
+            $file->mime_type = $newFile->getClientMimeType();
+            $file->size = $newFile->getSize();
+        }
+        $file->save();
+
+        return redirect()->route('files.index')->with('success', 'File updated successfully.');
     }
+
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(File $file)
+    public function destroy($id)
     {
-        //
+        $file = File::findOrFail($id);
+
+        // if ($file->path) {
+            Storage::disk('public')->delete($file->path);
+        // }
+
+        $file->delete();
+
+        return redirect()->route('files.index')->with('success','File Deleted Successfully');
     }
 
 
 
-    public function downloadFile(Request $request)
+
+    public function downloadFile(DawonloadFileRequest $request)
     {
-        // Validate the request data, including the secret key and file details
 
         $secretKey = $request->input('secretKey');
-        $file = $request->input('file');
+        $fileId = $request->input('fileId');
 
-        // Check if the entered secret key matches the file's secret key
-        if ($secretKey === $file['secret_key']) {
-            $filePath = 'uploads/' . $file['filename'];
-            // Get the file from the storage and return it as a download response
-            if (Storage::exists($filePath)) {
-                return response()->download(storage_path('app/' . $filePath), $file['filename'], [
-                    'Content-Type' => 'application/pdf',
-                ]);
+        $file = File::find($fileId);
+
+        if ($file && $secretKey === $file->secret_key) {
+            $filePath = $file->path;
+
+            if (Storage::disk('public')->exists($filePath)) {
+                $originalFilename = $file->filename;
+
+                $fileContents = Storage::disk('public')->get($filePath);
+
+                $fileMimeType = $file->mime_type;
+
+                $allowedMimeTypes = [
+                    'application/pdf',
+                    'image/jpeg',
+                    'image/png',
+                ];
+
+                if (in_array($fileMimeType, $allowedMimeTypes)) {
+                    return response($fileContents, 200, [
+                        'Content-Type' => $fileMimeType,
+                        'Content-Disposition' => 'attachment; filename="' . $originalFilename . '"',
+                    ]);
+                }
             }
         }
 
-        // If the secret key is incorrect or the file does not exist, return an error response
-        return response()->json(['message' => 'Error: File not found.'], 404);
+        // redirect to show file page with  error flash message
+
+        return redirect()->back()->with('error', 'Error: File not found or access denied.');
     }
+
+
 }
+
+

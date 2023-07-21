@@ -20,7 +20,8 @@ Route::get('/', function () {
 });
 Route::resource('files',FileController::class);
 
-Route::get('/admin',[DashboardController::class,'index'])->name('dashboard.index');
-Route::get('/show/{slug}',[FileController::class,'show'])->name('file.show');
+Route::get('/admin/dashboard',[DashboardController::class,'index'])->name('dashboard.index');
+
+Route::get('/show/{id}',[FileController::class,'show'])->name('file.show');
 
 Route::post('/download-file', [FileController::class,'downloadFile'])->name('download.file');

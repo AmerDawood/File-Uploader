@@ -15,25 +15,20 @@
                 <div class="card-header">Upload File</div>
 
                 <div class="card-body">
-                    @if ($errors->any())
-                        <div class="alert alert-danger">
-                            <ul>
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-
                     <form method="POST" action="{{ route('files.store') }}" enctype="multipart/form-data">
                         @csrf
 
                         <div class="form-group">
                             <label for="file">Choose File</label>
                             <div class="custom-file">
-                                <input type="file" class="custom-file-input" id="file" name="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpeg,.jpg">
+                                <input type="file" class="custom-file-input @error('file') is-invalid @enderror" id="file" name="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpeg,.jpg">
+                                @error('file')
+                                <small class="invalid-feedback">{{ $message }}</small>
+                                @enderror
+
                                 <label class="custom-file-label" for="file">Choose file</label>
                             </div>
+
                         </div>
 
 

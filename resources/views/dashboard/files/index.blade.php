@@ -16,6 +16,11 @@
                 <h6 class="m-0 font-weight-bold text-primary">DataTables Example</h6>
             </div>
             <div class="card-body">
+                @if (session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
                 <div class="table-responsive">
                     <div id="dataTable_wrapper" class="dataTables_wrapper dt-bootstrap4">
                         <div class="row">
@@ -61,12 +66,14 @@
                                             <td>{{ $file->secret_key }}</td>
 
                                             <td>
-                                                <a class="btn btn-sm btn-primary" href="">Edit</a>
-                                                <button class="btn btn-sm btn-danger btn-delete">Delete</button>
-                                                <form class="d-inline" action="" method="post">
+                                                <a class="btn btn-sm btn-primary" href="{{ route('files.edit',$file->id) }}">Edit</a>
+                                                <form id="delete-form" action="{{ route('files.destroy',$file->id) }}" method="POST" style="display: none;">
                                                     @csrf
-                                                    @method('delete')
+                                                    @method('DELETE')
                                                 </form>
+
+                                                <a href="#" class="btn btn-danger btn-sm" onclick="event.preventDefault(); if(confirm('Are you sure you want to delete this file?')) document.getElementById('delete-form').submit();">Delete</a>
+
                                                 <a class="btn btn-sm btn-success btn-copy-link" href="#">Copy Link</a>
                                             </td>
                                         </tr>
