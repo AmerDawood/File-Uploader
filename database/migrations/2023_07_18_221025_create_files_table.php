@@ -15,9 +15,14 @@ return new class extends Migration
             $table->id();
             $table->string('filename');
             $table->string('path');
-            $table->string('mime_type');
             $table->integer('size')->unsigned();
             $table->string('secret_key')->unique();
+
+
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+
+            
             // $table->string('slug')->unique();
             $table->timestamps();
         });

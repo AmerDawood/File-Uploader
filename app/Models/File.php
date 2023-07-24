@@ -13,9 +13,9 @@ class File extends Model
     protected $fillable = [
         'filename',
         'path',
-        'mime_type',
         'size',
         'secret_key',
+        'user_id',
     ];
 
 

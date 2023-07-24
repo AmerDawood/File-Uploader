@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\DawonloadFileRequest;
 use App\Http\Requests\FileRequest;
 use App\Models\File;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -16,7 +18,8 @@ class FileController extends Controller
      */
     public function index()
     {
-        $files = File::latest()->get();
+        $files = File::where('user_id', Auth::id())->latest()->get();
+
         return view('dashboard.files.index', compact('files'));
     }
 
@@ -33,22 +36,18 @@ class FileController extends Controller
      */
     public function store(FileRequest $request)
     {
-        // Get the uploaded file from the request
         $file = $request->file('file');
 
-        // Generate a unique filename using random string and original extension
         $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
 
-        // Store the file in the 'uploads' directory within the 'public' disk
         $path = $file->storeAs('uploads', $filename, 'public');
 
-        // Create a new file record in the database
         $newFile = File::create([
             'filename' => $file->getClientOriginalName(),
             'path' => $path,
-            'mime_type' => $file->getClientMimeType(),
             'size' => $file->getSize(),
             'secret_key' => Str::random(22),
+            'user_id'=> Auth::id(),
         ]);
 
         return redirect()->route('files.index')->with('success', 'File uploaded successfully.');
@@ -94,8 +93,8 @@ class FileController extends Controller
         // Update the new file data
         $file->filename = $newFile->getClientOriginalName();
         $file->path = $path;
-        $file->mime_type = $newFile->getClientMimeType();
-        $file->size = $newFile->getSize();
+        $file->user_id =  Auth::id();
+                $file->size = $newFile->getSize();
     }
 
     $file->save();
