@@ -28,7 +28,7 @@ Route::get('home',[DashboardController::class,'index'])->name('dashboard.index')
 
 
 
-Route::get('/show/{id}',[FileController::class,'show'])->name('file.show');
+Route::get('/show/{id}',[FileController::class,'show'])->name('files.show');
 
 Route::post('/download-file', [FileController::class,'downloadFile'])->name('download.file');
 

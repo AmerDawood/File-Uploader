@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class FileController extends Controller
@@ -18,9 +19,30 @@ class FileController extends Controller
      */
     public function index()
     {
-        $files = File::where('user_id', Auth::id())->latest()->get();
+
+        $files = File::latest()->get();
+
+
+        foreach ($files as $file) {
+            $file->download_link = $this->generateDownloadLink($file->id);
+        }
+
 
         return view('dashboard.files.index', compact('files'));
+    }
+
+
+    private function generateDownloadLink($fileId)
+    {
+        $file = File::find($fileId);
+
+        if ($file) {
+            return URL::signedRoute('files.show', [
+                'id' => $fileId,
+            ]);
+        }
+
+        return null;
     }
 
     /**
@@ -47,7 +69,7 @@ class FileController extends Controller
             'path' => $path,
             'size' => $file->getSize(),
             'secret_key' => Str::random(22),
-            'user_id'=> Auth::id(),
+            'user_id' => Auth::id(),
         ]);
 
         return redirect()->route('files.index')->with('success', 'File uploaded successfully.');
@@ -57,11 +79,11 @@ class FileController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show($id,)
     {
-        $file = File::find($id);
-        return view('dashboard.files.show', compact('file'));
+        $file = File::findOrFail($id);
 
+        return view('dashboard.files.show', compact('file'));
     }
 
     /**
@@ -70,37 +92,37 @@ class FileController extends Controller
     public function edit($id)
     {
 
-         $file = File::findOrFail($id);
+        $file = File::findOrFail($id);
 
-         return view('dashboard.files.edite',compact('file'));
+        return view('dashboard.files.edite', compact('file'));
     }
 
     /**
      * Update the specified resource in storage.
      */
     public function update(FileRequest $request, $id)
-{
-    $file = File::findOrFail($id);
+    {
+        $file = File::findOrFail($id);
 
-    if ($request->hasFile('file')) {
-        $newFile = $request->file('file');
-        $filename = Str::random(20) . '.' . $newFile->getClientOriginalExtension();
-        $path = $newFile->storeAs('uploads', $filename, 'public');
+        if ($request->hasFile('file')) {
+            $newFile = $request->file('file');
+            $filename = Str::random(20) . '.' . $newFile->getClientOriginalExtension();
+            $path = $newFile->storeAs('uploads', $filename, 'public');
 
-        // Remove the old file
-        Storage::disk('public')->delete($file->path);
+            // Remove the old file
+            Storage::disk('public')->delete($file->path);
 
-        // Update the new file data
-        $file->filename = $newFile->getClientOriginalName();
-        $file->path = $path;
-        $file->user_id =  Auth::id();
-                $file->size = $newFile->getSize();
+            // Update the new file data
+            $file->filename = $newFile->getClientOriginalName();
+            $file->path = $path;
+            $file->user_id =  Auth::id();
+            $file->size = $newFile->getSize();
+        }
+
+        $file->save();
+
+        return redirect()->route('files.index')->with('success', 'File updated successfully.');
     }
-
-    $file->save();
-
-    return redirect()->route('files.index')->with('success', 'File updated successfully.');
-}
 
 
 
@@ -112,12 +134,12 @@ class FileController extends Controller
         $file = File::findOrFail($id);
 
         // if ($file->path) {
-            Storage::disk('public')->delete($file->path);
+        Storage::disk('public')->delete($file->path);
         // }
 
         $file->delete();
 
-        return redirect()->route('files.index')->with('success','File Deleted Successfully');
+        return redirect()->route('files.index')->with('success', 'File Deleted Successfully');
     }
 
 
@@ -139,24 +161,10 @@ class FileController extends Controller
                 $storageFilePath = Storage::disk('public')->path($filePath);
 
                 return response()->download($storageFilePath, $originalFilename);
-
-
-                // [
-                    // 'Content-Type' => $file->mime_type,
-                    // 'Content-Disposition' => 'attachment; filename="' . $originalFilename . '"',
-                // ]);
-
-
             }
         }
 
         // Redirect to show file page with an error flash message
         return redirect()->back()->with('error', 'Error: File not found or access denied.');
     }
-
-
-
-
 }
-
-

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\UserFileScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -18,5 +19,9 @@ class File extends Model
         'user_id',
     ];
 
+    protected static function booted()
+    {
+       static::addGlobalScope(new UserFileScope);
+    }
 
 }

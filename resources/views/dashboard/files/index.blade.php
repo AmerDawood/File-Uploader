@@ -49,6 +49,11 @@
                                             <th class="sorting" tabindex="0" aria-controls="dataTable" rowspan="1"
                                                 colspan="1" aria-label="Start date: activate to sort column ascending"
                                                 style="width: 122px;">Secet Key</th>
+                                                {{-- <th class="sorting" tabindex="0" aria-controls="dataTable" rowspan="1"
+                                                colspan="1" aria-label="Start date: activate to sort column ascending"
+                                                style="width: 122px;">Download Link</th> --}}
+
+
                                             <th class="sorting" tabindex="0" aria-controls="dataTable" rowspan="1"
                                                 colspan="1" aria-label="Salary: activate to sort column ascending"
                                                 style="width: 109px;">Actions</th>
@@ -64,6 +69,8 @@
                                                 <td>{{ $file->user_id }}</td>
                                                 <td>{{ $file->created_at }}</td>
                                                 <td>{{ $file->secret_key }}</td>
+                                                {{-- <td>{{ $file->download_link}}</td> --}}
+
 
                                                 <td>
                                                     <a class="btn btn-sm btn-primary"
@@ -78,7 +85,12 @@
                                                         onclick="event.preventDefault(); if(confirm('Are you sure you want to delete this file?')) document.getElementById('delete-form').submit();"><i class="fas fa-trash"></i></a>
 
 
-                                                    <a class="btn btn-sm btn-success btn-copy-link" href="#"><i class="fas fa-link"></i></a>
+
+                                                            <a class="btn btn-sm btn-success btn-copy-link" href="#" data-link="{{ $file->download_link }}"><i class="fas fa-link"></i></a>
+
+
+                                                    {{-- <button class="btn btn-sm btn-success btn-copy-link" data-link="{{ $file->download_link }}"><i class="fas fa-link"></i></button> --}}
+
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -98,32 +110,39 @@
 
 
 @section('scripts')
+<script>
+    const copyLinkButtons = document.querySelectorAll('.btn-copy-link');
 
-
-    <script>
-        // JavaScript to handle copy link button click
-        const copyLinkButtons = document.querySelectorAll('.btn-copy-link');
-
-        copyLinkButtons.forEach((button) => {
-            button.addEventListener('click', () => {
-                const row = button.closest('tr');
-                const fileId = row.querySelector('.sorting_1').textContent;
-                const link = window.location.origin + '/show/' +
-                fileId; // Modify the URL pattern as per your route
-                copyToClipboard(link);
-                alert('Link copied: ' + link);
-            });
+    copyLinkButtons.forEach((button) => {
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            const link = button.getAttribute('data-link');
+            copyToClipboard(link);
+            showCopiedMessage(button);
         });
+    });
 
-        function copyToClipboard(text) {
-            const input = document.createElement('textarea');
-            input.style.position = 'fixed';
-            input.style.opacity = 0;
-            input.value = text;
-            document.body.appendChild(input);
-            input.select();
-            document.execCommand('copy');
-            document.body.removeChild(input);
-        }
-    </script>
+    function copyToClipboard(text) {
+        const input = document.createElement('textarea');
+        input.style.position = 'fixed';
+        input.style.opacity = 0;
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+    }
+
+    function showCopiedMessage(button) {
+        const tooltip = document.createElement('span');
+        tooltip.classList.add('copied-tooltip');
+        tooltip.textContent = 'Link Copied!';
+        button.appendChild(tooltip);
+
+        setTimeout(() => {
+            button.removeChild(tooltip);
+        }, 1000);
+    }
+</script>
+
 @stop
