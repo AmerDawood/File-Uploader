@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\FileDownloaded;
 use App\Http\Requests\DawonloadFileRequest;
 use App\Http\Requests\FileRequest;
 use App\Models\File;
 use App\Models\User;
+use App\Notifications\FileDownloadedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -147,6 +149,8 @@ class FileController extends Controller
 
     public function downloadFile(DawonloadFileRequest $request)
     {
+        // dd(Auth::id());
+
         $secretKey = $request->input('secretKey');
         $fileId = $request->input('fileId');
 
@@ -163,6 +167,11 @@ class FileController extends Controller
                 return response()->download($storageFilePath, $originalFilename);
             }
         }
+        
+
+         event(new FileDownloaded(Auth::id(), $file));
+
+
 
         // Redirect to show file page with an error flash message
         return redirect()->back()->with('error', 'Error: File not found or access denied.');
